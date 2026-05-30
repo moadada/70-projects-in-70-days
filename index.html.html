@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .calculator {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            width: 320px;
+        }
+        #display {
+            width: 100%;
+            height: 70px;
+            font-size: 2rem;
+            text-align: right;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: none;
+            background: #f0f0f0;
+            border-radius: 10px;
+            font-family: monospace;
+        }
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+        button {
+            padding: 20px;
+            font-size: 1.2rem;
+            border: none;
+            background: #e0e0e0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        button:hover {
+            background: #d0d0d0;
+            transform: scale(0.98);
+        }
+        button.operator {
+            background: #ff9500;
+            color: white;
+        }
+        button.equals {
+            background: #4cd964;
+            color: white;
+            grid-column: span 2;
+        }
+        button.clear {
+            background: #ff3b30;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <input type="text" id="display" readonly>
+        <div class="buttons">
+            <button class="clear" onclick="clearDisplay()">AC</button>
+            <button class="operator" onclick="appendOperator('/')">/</button>
+            <button class="operator" onclick="appendOperator('*')">×</button>
+            <button onclick="deleteLast()">⌫</button>
+            
+            <button onclick="appendNumber(7)">7</button>
+            <button onclick="appendNumber(8)">8</button>
+            <button onclick="appendNumber(9)">9</button>
+            <button class="operator" onclick="appendOperator('-')">-</button>
+            
+            <button onclick="appendNumber(4)">4</button>
+            <button onclick="appendNumber(5)">5</button>
+            <button onclick="appendNumber(6)">6</button>
+            <button class="operator" onclick="appendOperator('+')">+</button>
+            
+            <button onclick="appendNumber(1)">1</button>
+            <button onclick="appendNumber(2)">2</button>
+            <button onclick="appendNumber(3)">3</button>
+            <button class="equals" onclick="calculate()">=</button>
+            
+            <button onclick="appendNumber(0)">0</button>
+            <button onclick="appendDecimal()">.</button>
+            <button onclick="clearDisplay()" style="background: #ff3b30; color: white;">C</button>
+        </div>
+    </div>
+    <script>
+        let display = document.getElementById('display');
+        let currentInput = '';
+        
+        function appendNumber(num) {
+            currentInput += num.toString();
+            display.value = currentInput;
+        }
+        
+        function appendOperator(op) {
+            if (currentInput === '' && op === '-') {
+                currentInput = '-';
+                display.value = currentInput;
+                return;
+            }
+            if (currentInput !== '' && !isNaN(currentInput.slice(-1))) {
+                currentInput += op;
+                display.value = currentInput;
+            }
+        }
+        
+        function appendDecimal() {
+            let parts = currentInput.split(/[\+\-\*\/]/);
+            let lastNumber = parts[parts.length - 1];
+            if (!lastNumber.includes('.')) {
+                currentInput += '.';
+                display.value = currentInput;
+            }
+        }
+        
+        function calculate() {
+            try {
+                let expression = currentInput.replace(/×/g, '*');
+                let result = eval(expression);
+                if (isNaN(result) || !isFinite(result)) {
+                    display.value = 'Error';
+                    currentInput = '';
+                } else {
+                    result = Math.round(result * 1000000) / 1000000;
+                    display.value = result;
+                    currentInput = result.toString();
+                }
+            } catch (e) {
+                display.value = 'Error';
+                currentInput = '';
+            }
+        }
+        
+        function clearDisplay() {
+            currentInput = '';
+            display.value = '0';
+        }
+        
+        function deleteLast() {
+            currentInput = currentInput.slice(0, -1);
+            display.value = currentInput || '0';
+        }
+        
+        document.addEventListener('keydown', function(event) {
+            const key = event.key;
+            if (!isNaN(key)) {
+                appendNumber(parseInt(key));
+            } else if (key === '+' || key === '-' || key === '*' || key === '/') {
+                appendOperator(key);
+            } else if (key === '.') {
+                appendDecimal();
+            } else if (key === 'Enter') {
+                calculate();
+            } else if (key === 'Escape') {
+                clearDisplay();
+            } else if (key === 'Backspace') {
+                deleteLast();
+            }
+        });
+        
+        display.value = '0';
+    </script>
+</body>
+</html>
