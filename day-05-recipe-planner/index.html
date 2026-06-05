@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>FlavorForge | AI Meal Studio</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body {
+            background: radial-gradient(circle at 10% 20%, rgba(0, 20, 10, 0.95), rgba(0, 5, 2, 1));
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        .app-container {
+            max-width: 1300px;
+            margin: 0 auto;
+            background: rgba(22, 28, 22, 0.55);
+            backdrop-filter: blur(12px);
+            border-radius: 64px;
+            padding: 28px 32px 48px;
+            box-shadow: 0 30px 50px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 48px;
+            border-bottom: 1px solid rgba(255,215,150,0.3);
+            padding-bottom: 20px;
+        }
+
+        .nav-btn {
+            background: transparent;
+            border: none;
+            font-size: 1.5rem;
+            font-weight: 600;
+            padding: 12px 28px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            border-radius: 60px;
+            color: #ccc;
+            letter-spacing: -0.3px;
+            backdrop-filter: blur(4px);
+        }
+
+        .nav-btn span {
+            background: linear-gradient(135deg, #e0e0e0, #aaaaaa);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            transition: all 0.25s;
+        }
+
+        .nav-btn:hover span {
+            background: linear-gradient(135deg, #FFD966, #FFB347, #FF6B4A);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            transform: scale(1.02);
+        }
+
+        .nav-btn.active {
+            background: rgba(255,245,210,0.15);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .nav-btn.active span {
+            background: linear-gradient(135deg, #FFD966, #FFA559);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            font-weight: 700;
+        }
+
+        .panel {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .panel.active-panel {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px);}
+            to { opacity: 1; transform: translateY(0);}
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.94);
+            border-radius: 48px;
+            padding: 32px;
+            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.4);
+            transition: all 0.2s;
+        }
+
+        h2 {
+            font-size: 1.9rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #2c5e2e, #1a3a1a);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+
+        .sub {
+            color: #4a6f4a;
+            margin-bottom: 28px;
+            font-weight: 500;
+        }
+
+        label {
+            font-weight: 600;
+            color: #1f3b1f;
+            display: block;
+            margin: 20px 0 8px;
+        }
+
+        textarea, input, select {
+            width: 100%;
+            padding: 14px 18px;
+            border-radius: 32px;
+            border: 2px solid #e2e8e0;
+            background: white;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+
+        textarea:focus, input:focus, select:focus {
+            border-color: #f5b042;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(245,176,66,0.2);
+        }
+
+        button.generate {
+            background: linear-gradient(95deg, #2c5e2e, #1f4a21);
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 44px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            width: 100%;
+            margin: 28px 0 12px;
+            transition: 0.2s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        button.generate:hover {
+            transform: scale(1.01);
+            background: linear-gradient(95deg, #3d7640, #2a6130);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 30px;
+            background: #f9f5e8;
+            border-radius: 36px;
+            margin-top: 24px;
+        }
+
+        .result-box {
+            margin-top: 28px;
+            background: #fefaf0;
+            border-radius: 36px;
+            padding: 24px;
+            display: none;
+        }
+
+        .result-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #2d5e2c;
+            border-left: 8px solid #f5b042;
+            padding-left: 20px;
+            margin-bottom: 18px;
+        }
+
+        .recipe-meta {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 20px;
+            color: #5a6e5a;
+        }
+
+        .error-msg {
+            background: #ffeded;
+            border-radius: 32px;
+            padding: 16px;
+            color: #b13e3e;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .footer-note {
+            text-align: center;
+            margin-top: 40px;
+            color: #bdbdaa;
+            font-size: 0.75rem;
+        }
+
+        @media (max-width: 700px) {
+            .app-container { padding: 16px; }
+            .nav-btn { font-size: 1.2rem; padding: 8px 16px; }
+            .card { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+<div class="app-container">
+    <div class="nav-tabs">
+        <button class="nav-btn active" data-tab="mealprep"><span>🍱 Meal Prepper</span></button>
+        <button class="nav-btn" data-tab="recipegen"><span>✨ Random Ingredient Food</span></button>
+        <button class="nav-btn" data-tab="drinks"><span>🥤 Drinks / Smoothies</span></button>
+    </div>
+
+    <!-- PANEL 1: MEAL PREPPER -->
+    <div id="panel-mealprep" class="panel active-panel">
+        <div class="card">
+            <h2>🍱 Meal Prepper</h2>
+            <div class="sub">Tell us your favorite foods, protein goal, and available ingredients → custom meal.</div>
+            <label>🥗 What foods do you love?</label>
+            <textarea id="prefFoods" rows="2" placeholder="e.g., grilled chicken, sweet potatoes, broccoli, quinoa"></textarea>
+            <label>💪 Daily protein goal (grams)</label>
+            <input type="number" id="proteinGoal" placeholder="e.g., 120" value="130">
+            <label>🧺 Ingredients you already have</label>
+            <textarea id="prepIngredients" rows="2" placeholder="onion, garlic, olive oil, eggs, spinach"></textarea>
+            <button class="generate" id="genMealPrep">✨ Generate Meal Plan & Recipe</button>
+            <div id="mealPrepLoading" class="loading"><span>🧠 AI is designing your meal...</span></div>
+            <div id="mealPrepResult" class="result-box"></div>
+            <div id="mealPrepError" class="error-msg"></div>
+        </div>
+    </div>
+
+    <!-- PANEL 2: RANDOM INGREDIENT FOOD -->
+    <div id="panel-recipegen" class="panel">
+        <div class="card">
+            <h2>✨ Random Ingredient Food Generator</h2>
+            <div class="sub">Type what you have → get a unique delicious meal.</div>
+            <label>📦 Your ingredients (comma separated)</label>
+            <textarea id="randomIngredients" rows="3" placeholder="e.g., canned tuna, pasta, tomato sauce, parmesan"></textarea>
+            <label>🍽️ Meal style</label>
+            <select id="mealStyle">
+                <option value="any">Any style</option>
+                <option value="quick">Quick & Easy (<30 min)</option>
+                <option value="healthy">Healthy/Low calorie</option>
+                <option value="comfort">Comfort food</option>
+            </select>
+            <button class="generate" id="genRandomRecipe">✨ Generate Random Delicious Meal</button>
+            <div id="randomLoading" class="loading"><span>🍳 Crafting something tasty...</span></div>
+            <div id="randomResult" class="result-box"></div>
+            <div id="randomError" class="error-msg"></div>
+        </div>
+    </div>
+
+    <!-- PANEL 3: DRINKS -->
+    <div id="panel-drinks" class="panel">
+        <div class="card">
+            <h2>🥤 Drink Studio</h2>
+            <div class="sub">Turn fruits, veggies, dairy into a smoothie, juice, or milkshake.</div>
+            <label>🥑 Ingredients for your drink</label>
+            <textarea id="drinkIngredients" rows="2" placeholder="banana, spinach, almond milk, honey"></textarea>
+            <label>🥛 Drink type preference</label>
+            <select id="drinkType">
+                <option value="smoothie">Smoothie</option>
+                <option value="juice">Fresh Juice</option>
+                <option value="milkshake">Milkshake</option>
+                <option value="any">Best match</option>
+            </select>
+            <button class="generate" id="genDrink">✨ Blend My Drink</button>
+            <div id="drinkLoading" class="loading"><span>🥤 Mixing flavors...</span></div>
+            <div id="drinkResult" class="result-box"></div>
+            <div id="drinkError" class="error-msg"></div>
+        </div>
+    </div>
+    <div class="footer-note">⚡ Powered by DeepSeek AI • No limits • Recipe & drink magic</div>
+</div>
+
+<script>
+    // 🔑 YOUR DEEPSEEK API KEY (already inserted)
+    const DEEPSEEK_API_KEY = "sk-38e25474156846319c008bb8c25eb492";
+
+    async function callDeepSeek(prompt, systemMsg = "You are a professional chef and nutritionist. Keep recipes healthy, realistic, and delicious. Use only given ingredients.") {
+        const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+            },
+            body: JSON.stringify({
+                model: 'deepseek-chat',
+                messages: [
+                    { role: 'system', content: systemMsg },
+                    { role: 'user', content: prompt }
+                ],
+                temperature: 0.75,
+                max_tokens: 1300
+            })
+        });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.error?.message || 'API error');
+        }
+        const data = await response.json();
+        return data.choices[0].message.content;
+    }
+
+    function displayResult(container, rawText) {
+        container.innerHTML = '';
+        let title = "Your Creation";
+        const titleMatch = rawText.match(/\*\*Recipe Name:\*\*\s*(.+)/i) || rawText.match(/^#\s*(.+)/m);
+        if (titleMatch) title = titleMatch[1].trim();
+        const html = `
+            <div class="result-title">${escapeHtml(title)}</div>
+            <div class="recipe-meta">🍽️ AI‑crafted just for you</div>
+            <div style="white-space: pre-wrap; line-height:1.5;">${escapeHtml(rawText)}</div>
+        `;
+        container.innerHTML = html;
+        container.style.display = 'block';
+    }
+
+    function escapeHtml(str) {
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    // Meal Prepper
+    document.getElementById('genMealPrep').addEventListener('click', async () => {
+        const favFoods = document.getElementById('prefFoods').value.trim();
+        const proteinGoal = document.getElementById('proteinGoal').value;
+        const ingredients = document.getElementById('prepIngredients').value.trim();
+        if (!favFoods && !ingredients) {
+            document.getElementById('mealPrepError').innerText = 'Please tell us what foods you like or ingredients you have.';
+            document.getElementById('mealPrepError').style.display = 'block';
+            return;
+        }
+        const loading = document.getElementById('mealPrepLoading');
+        const resultDiv = document.getElementById('mealPrepResult');
+        const errorDiv = document.getElementById('mealPrepError');
+        loading.style.display = 'block';
+        resultDiv.style.display = 'none';
+        errorDiv.style.display = 'none';
+        try {
+            const prompt = `Create a healthy, satisfying meal plan (one main recipe) based on:
+- Favorite foods: ${favFoods || "any healthy ingredients"}
+- Protein goal: ${proteinGoal}g per day
+- Available ingredients: ${ingredients || "use common pantry items"}
+
+Generate a recipe with **Recipe Name**, prep & cook time, ingredients list, step-by-step instructions, nutrition highlights, and a pro tip. Keep realistic, delicious, and within protein target.`;
+            const aiText = await callDeepSeek(prompt);
+            displayResult(resultDiv, aiText);
+        } catch (err) {
+            errorDiv.innerText = '❌ ' + err.message;
+            errorDiv.style.display = 'block';
+        } finally {
+            loading.style.display = 'none';
+        }
+    });
+
+    // Random Ingredient Food
+    document.getElementById('genRandomRecipe').addEventListener('click', async () => {
+        const ingredients = document.getElementById('randomIngredients').value.trim();
+        const style = document.getElementById('mealStyle').value;
+        if (!ingredients) {
+            document.getElementById('randomError').innerText = 'Add some ingredients first!';
+            document.getElementById('randomError').style.display = 'block';
+            return;
+        }
+        const loading = document.getElementById('randomLoading');
+        const resultDiv = document.getElementById('randomResult');
+        const errorDiv = document.getElementById('randomError');
+        loading.style.display = 'block';
+        resultDiv.style.display = 'none';
+        errorDiv.style.display = 'none';
+        try {
+            const prompt = `Using these ingredients: ${ingredients}. Meal style: ${style}. Create a delicious, surprising recipe. Output with **Recipe Name**, preparation time, cooking time, ingredients list, step-by-step instructions, nutrition highlights, and one pro tip. Make it appetizing.`;
+            const aiText = await callDeepSeek(prompt);
+            displayResult(resultDiv, aiText);
+        } catch (err) {
+            errorDiv.innerText = '⚠️ ' + err.message;
+            errorDiv.style.display = 'block';
+        } finally {
+            loading.style.display = 'none';
+        }
+    });
+
+    // Drinks
+    document.getElementById('genDrink').addEventListener('click', async () => {
+        const ingredients = document.getElementById('drinkIngredients').value.trim();
+        const drinkPref = document.getElementById('drinkType').value;
+        if (!ingredients) {
+            document.getElementById('drinkError').innerText = 'Enter some fruits, veggies, or liquids.';
+            document.getElementById('drinkError').style.display = 'block';
+            return;
+        }
+        const loading = document.getElementById('drinkLoading');
+        const resultDiv = document.getElementById('drinkResult');
+        const errorDiv = document.getElementById('drinkError');
+        loading.style.display = 'block';
+        resultDiv.style.display = 'none';
+        errorDiv.style.display = 'none';
+        try {
+            const prompt = `Based on: ${ingredients}. Drink type preference: ${drinkPref}. Create a refreshing drink recipe (smoothie/juice/milkshake). Include **Recipe Name**, preparation time, ingredients, step-by-step instructions, nutritional notes, and a pro tip. Keep it healthy and delicious.`;
+            const aiText = await callDeepSeek(prompt, "You are a mixologist specialized in healthy drinks, smoothies, and juices.");
+            displayResult(resultDiv, aiText);
+        } catch (err) {
+            errorDiv.innerText = '❌ ' + err.message;
+            errorDiv.style.display = 'block';
+        } finally {
+            loading.style.display = 'none';
+        }
+    });
+
+    // Tab switching
+    const tabs = document.querySelectorAll('.nav-btn');
+    const panels = {
+        mealprep: document.getElementById('panel-mealprep'),
+        recipegen: document.getElementById('panel-recipegen'),
+        drinks: document.getElementById('panel-drinks')
+    };
+    tabs.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabId = btn.getAttribute('data-tab');
+            tabs.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            Object.values(panels).forEach(p => p.classList.remove('active-panel'));
+            panels[tabId].classList.add('active-panel');
+        });
+    });
+</script>
+</body>
+</html>
