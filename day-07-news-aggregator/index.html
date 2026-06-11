@@ -1,0 +1,1440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NewsHub — Smart News Aggregator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ── CSS Variables ────────────────────────────────────────── */
+    :root {
+      --bg-deep: #0b0d10;
+      --bg-base: #0f1216;
+      --bg-card: #181b22;
+      --bg-hover: #20242d;
+      --bg-elevated: #252a34;
+      --border-subtle: rgba(255, 255, 255, 0.05);
+      --border-hover: rgba(255, 255, 255, 0.10);
+      --text-primary: #f0f2f5;
+      --text-secondary: #9aa3b2;
+      --text-tertiary: #5e6675;
+      --accent: #5b8def;
+      --accent-soft: rgba(91, 141, 239, 0.12);
+      --accent-border: rgba(91, 141, 239, 0.30);
+      --green: #4ade80;
+      --green-soft: rgba(74, 222, 128, 0.10);
+      --amber: #fbbf24;
+      --red: #f87171;
+      --radius: 14px;
+      --radius-lg: 20px;
+      --shadow-elevated: 0 8px 32px rgba(0, 0, 0, 0.35);
+      --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      --font-heading: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-body: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg-base);
+      color: var(--text-primary);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      min-height: 100vh;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    button { cursor: pointer; font-family: inherit; border: none; background: none; color: inherit; }
+    img { max-width: 100%; display: block; }
+
+    /* ── Utility ──────────────────────────────────────────────── */
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .flex { display: flex; }
+    .flex-col { flex-direction: column; }
+    .items-center { align-items: center; }
+    .justify-between { justify-content: space-between; }
+    .gap-2 { gap: 8px; }
+    .gap-3 { gap: 12px; }
+    .gap-4 { gap: 16px; }
+    .hidden { display: none !important; }
+
+    /* ── Header ───────────────────────────────────────────────── */
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: rgba(15, 18, 22, 0.85);
+      backdrop-filter: blur(20px) saturate(1.4);
+      -webkit-backdrop-filter: blur(20px) saturate(1.4);
+      border-bottom: 1px solid var(--border-subtle);
+      transition: background var(--transition), border-color var(--transition);
+    }
+
+    .header-scrolled {
+      background: rgba(15, 18, 22, 0.95);
+      border-bottom-color: var(--border-hover);
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 24px;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--font-heading);
+      font-weight: 800;
+      font-size: 1.35rem;
+      letter-spacing: -0.03em;
+      color: var(--text-primary);
+      flex-shrink: 0;
+    }
+
+    .logo-mark {
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      background: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 900;
+      color: #fff;
+    }
+
+    /* ── Search ───────────────────────────────────────────────── */
+    .search-wrap {
+      position: relative;
+      flex: 1;
+      max-width: 440px;
+      margin: 0 24px;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 10px 16px 10px 40px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      color: var(--text-primary);
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+    }
+
+    .search-input::placeholder { color: var(--text-tertiary); }
+
+    .search-input:focus {
+      border-color: var(--accent-border);
+      background: var(--bg-hover);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 13px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-tertiary);
+      pointer-events: none;
+    }
+
+    /* ── Category Tabs ────────────────────────────────────────── */
+    .tabs-wrap {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .tab-btn {
+      padding: 7px 16px;
+      border-radius: 8px;
+      font-family: var(--font-heading);
+      font-weight: 600;
+      font-size: 0.82rem;
+      letter-spacing: -0.01em;
+      color: var(--text-secondary);
+      background: transparent;
+      transition: all var(--transition);
+      position: relative;
+      white-space: nowrap;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-primary);
+      background: var(--bg-hover);
+    }
+
+    .tab-btn.active {
+      color: var(--text-primary);
+      background: var(--bg-hover);
+      box-shadow: inset 0 0 0 1px var(--border-hover);
+    }
+
+    .tab-btn .saved-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      margin-left: 5px;
+      border-radius: 9px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 0.68rem;
+      font-weight: 700;
+      vertical-align: middle;
+    }
+
+    /* ── Mobile Tabs (horizontal scroll) ──────────────────────── */
+    .mobile-tabs {
+      display: none;
+      position: fixed;
+      top: 60px;
+      left: 0;
+      right: 0;
+      z-index: 99;
+      background: rgba(15, 18, 22, 0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 6px 16px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .mobile-tabs::-webkit-scrollbar { display: none; }
+
+    .mobile-tabs-inner {
+      display: flex;
+      gap: 4px;
+      width: max-content;
+    }
+
+    /* ── Hero Section ─────────────────────────────────────────── */
+    .hero {
+      padding-top: 130px;
+      padding-bottom: 32px;
+      position: relative;
+    }
+
+    .hero-inner {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .hero-title {
+      font-family: var(--font-heading);
+      font-weight: 900;
+      font-size: 2.4rem;
+      letter-spacing: -0.035em;
+      line-height: 1.1;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+
+    .hero-subtitle {
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      font-weight: 400;
+    }
+
+    .hero-meta {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-shrink: 0;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green-soft);
+      animation: pulse 2.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 6px var(--green); }
+      50% { opacity: 0.6; box-shadow: 0 0 12px var(--green-soft); }
+    }
+
+    .status-text {
+      font-size: 0.78rem;
+      color: var(--text-tertiary);
+      font-weight: 500;
+    }
+
+    /* ── Divider ──────────────────────────────────────────────── */
+    .section-divider {
+      height: 1px;
+      background: var(--border-subtle);
+      margin: 0 24px;
+    }
+
+    /* ── Main Content ─────────────────────────────────────────── */
+    .main {
+      padding: 32px 0 60px;
+    }
+
+    /* ── Article Grid ─────────────────────────────────────────── */
+    .article-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    /* ── Article Card ─────────────────────────────────────────── */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-elevated);
+      border-color: var(--border-hover);
+    }
+
+    /* Card image area */
+    .card-image-wrap {
+      position: relative;
+      width: 100%;
+      padding-top: 52%;
+      overflow: hidden;
+      background: linear-gradient(135deg, #1a1e27 0%, #252a36 100%);
+    }
+
+    .card-image-wrap img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .card:hover .card-image-wrap img {
+      transform: scale(1.06);
+    }
+
+    /* Image overlay with gradient */
+    .card-image-wrap::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 50%;
+      background: linear-gradient(to top, rgba(24, 27, 34, 0.7) 0%, transparent 100%);
+      pointer-events: none;
+    }
+
+    /* Category badge on image */
+    .card-cat-badge {
+      position: absolute;
+      bottom: 10px;
+      left: 12px;
+      z-index: 2;
+      padding: 3px 10px;
+      border-radius: 6px;
+      font-family: var(--font-heading);
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      pointer-events: none;
+    }
+
+    .card-cat-general  { background: rgba(255, 255, 255, 0.15); color: #e2e8f0; }
+    .card-cat-technology { background: rgba(91, 141, 239, 0.20); color: #7bb0ff; }
+    .card-cat-business { background: rgba(74, 222, 128, 0.15); color: #6ee7a0; }
+    .card-cat-sports   { background: rgba(251, 191, 36, 0.15); color: #fcd34d; }
+    .card-cat-science  { background: rgba(167, 139, 250, 0.15); color: #c4b5fd; }
+    .card-cat-health   { background: rgba(248, 113, 113, 0.15); color: #fca5a5; }
+
+    /* Card body */
+    .card-body {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      gap: 10px;
+    }
+
+    .card-meta-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .card-source {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .card-source-icon {
+      width: 16px;
+      height: 16px;
+      border-radius: 3px;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .card-source-name {
+      font-family: var(--font-heading);
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .card-time {
+      font-size: 0.72rem;
+      color: var(--text-tertiary);
+      font-weight: 500;
+    }
+
+    .card-headline {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 0.95rem;
+      line-height: 1.35;
+      letter-spacing: -0.015em;
+      color: var(--text-primary);
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .card-desc {
+      font-size: 0.82rem;
+      line-height: 1.55;
+      color: var(--text-secondary);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* Card actions */
+    .card-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: auto;
+      padding-top: 10px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .read-btn {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-family: var(--font-heading);
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--accent);
+      transition: color var(--transition);
+      padding: 4px 0;
+    }
+
+    .read-btn:hover { color: #7bb0ff; }
+    .read-btn svg { transition: transform var(--transition); }
+    .read-btn:hover svg { transform: translateX(2px); }
+
+    .save-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-tertiary);
+      transition: all var(--transition);
+      background: transparent;
+    }
+
+    .save-btn:hover {
+      background: var(--bg-hover);
+      color: var(--accent);
+    }
+
+    .save-btn.saved {
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .save-btn.saved svg { fill: currentColor; }
+
+    /* ── Skeleton Loader ──────────────────────────────────────── */
+    .skeleton-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .skeleton-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .skeleton-img {
+      width: 100%;
+      padding-top: 52%;
+      background: linear-gradient(90deg, #1e222b 25%, #252a34 50%, #1e222b 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s ease-in-out infinite;
+    }
+
+    .skeleton-body { padding: 16px; }
+
+    .skeleton-line {
+      height: 10px;
+      border-radius: 5px;
+      background: linear-gradient(90deg, #1e222b 25%, #252a34 50%, #1e222b 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s ease-in-out infinite;
+      margin-bottom: 8px;
+    }
+
+    .skeleton-line.short { width: 45%; }
+    .skeleton-line.medium { width: 70%; }
+    .skeleton-line.long { width: 95%; }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ── Error State ──────────────────────────────────────────── */
+    .error-state {
+      text-align: center;
+      padding: 80px 24px;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    .error-icon {
+      width: 56px;
+      height: 56px;
+      margin: 0 auto 20px;
+      border-radius: 16px;
+      background: rgba(248, 113, 113, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .error-icon svg { color: var(--red); }
+
+    .error-title {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 1.2rem;
+      margin-bottom: 6px;
+      color: var(--text-primary);
+    }
+
+    .error-desc {
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+
+    .retry-btn {
+      padding: 10px 24px;
+      border-radius: 10px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-hover);
+      font-family: var(--font-heading);
+      font-weight: 600;
+      font-size: 0.82rem;
+      color: var(--text-primary);
+      transition: all var(--transition);
+    }
+
+    .retry-btn:hover {
+      background: var(--bg-hover);
+      border-color: var(--accent-border);
+    }
+
+    /* ── Load More ────────────────────────────────────────────── */
+    .load-more-wrap {
+      display: flex;
+      justify-content: center;
+      margin-top: 36px;
+    }
+
+    .load-more-btn {
+      padding: 12px 32px;
+      border-radius: 10px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      font-family: var(--font-heading);
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      transition: all var(--transition);
+    }
+
+    .load-more-btn:hover {
+      background: var(--bg-hover);
+      border-color: var(--accent-border);
+      color: var(--text-primary);
+    }
+
+    .load-more-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* ── Empty State ──────────────────────────────────────────── */
+    .empty-state {
+      text-align: center;
+      padding: 80px 24px;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    .empty-state svg {
+      color: var(--text-tertiary);
+      margin-bottom: 16px;
+    }
+
+    .empty-state h3 {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      font-size: 1.1rem;
+      margin-bottom: 6px;
+      color: var(--text-primary);
+    }
+
+    .empty-state p {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+    }
+
+    /* ── Toast ────────────────────────────────────────────────── */
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      z-index: 200;
+      padding: 12px 20px;
+      border-radius: 12px;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-hover);
+      box-shadow: var(--shadow-elevated);
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      pointer-events: none;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .toast svg { vertical-align: middle; margin-right: 6px; }
+
+    /* ── Footer ───────────────────────────────────────────────── */
+    .footer {
+      text-align: center;
+      padding: 32px 24px 48px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .footer p {
+      font-size: 0.78rem;
+      color: var(--text-tertiary);
+      line-height: 1.6;
+    }
+
+    .footer a {
+      color: var(--text-secondary);
+      transition: color var(--transition);
+    }
+
+    .footer a:hover { color: var(--accent); }
+
+    /* ── Responsive ───────────────────────────────────────────── */
+    @media (max-width: 1024px) {
+      .article-grid,
+      .skeleton-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 768px) {
+      .header-inner { padding: 12px 16px; }
+      .search-wrap { max-width: 220px; margin: 0 12px; }
+      .tab-btn { padding: 6px 12px; font-size: 0.75rem; }
+      .tabs-wrap .tab-btn[data-cat] { display: none; }
+      .mobile-tabs { display: block; }
+      .hero { padding-top: 118px; padding-bottom: 20px; }
+      .hero-title { font-size: 1.7rem; }
+      .hero-inner { flex-direction: column; align-items: flex-start; }
+      .hero-meta { margin-top: 8px; }
+      .article-grid,
+      .skeleton-grid { grid-template-columns: 1fr; gap: 16px; }
+      .main { padding: 24px 0 48px; }
+    }
+
+    @media (max-width: 480px) {
+      .logo { font-size: 1.1rem; }
+      .logo-mark { width: 28px; height: 28px; font-size: 0.7rem; }
+      .search-wrap { max-width: 160px; margin: 0 8px; }
+      .search-input { padding: 8px 12px 8px 34px; font-size: 0.82rem; }
+      .hero-title { font-size: 1.4rem; }
+    }
+
+    /* Smooth scroll offset for fixed header */
+    html { scroll-padding-top: 120px; }
+
+    /* Selection */
+    ::selection {
+      background: rgba(91, 141, 239, 0.25);
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════ HEADER ═══════════════ -->
+  <header class="header" id="header">
+    <div class="header-inner">
+      <!-- Logo -->
+      <a href="/" class="logo">
+        <div class="logo-mark">N</div>
+        <span>NewsHub</span>
+      </a>
+
+      <!-- Search -->
+      <div class="search-wrap">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+        </svg>
+        <input type="text" class="search-input" id="searchInput" placeholder="Search headlines..." />
+      </div>
+
+      <!-- Desktop Tabs -->
+      <nav class="tabs-wrap" id="desktopTabs">
+        <button class="tab-btn active" data-cat="general">General</button>
+        <button class="tab-btn" data-cat="technology">Technology</button>
+        <button class="tab-btn" data-cat="business">Business</button>
+        <button class="tab-btn" data-cat="sports">Sports</button>
+        <button class="tab-btn" data-cat="science">Science</button>
+        <button class="tab-btn" data-cat="health">Health</button>
+        <button class="tab-btn" data-cat="saved">
+          Saved
+          <span class="saved-count" id="savedCount">0</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Mobile Tabs (horizontal scroll) -->
+  <div class="mobile-tabs" id="mobileTabs">
+    <div class="mobile-tabs-inner">
+      <button class="tab-btn active" data-cat="general">General</button>
+      <button class="tab-btn" data-cat="technology">Technology</button>
+      <button class="tab-btn" data-cat="business">Business</button>
+      <button class="tab-btn" data-cat="sports">Sports</button>
+      <button class="tab-btn" data-cat="science">Science</button>
+      <button class="tab-btn" data-cat="health">Health</button>
+      <button class="tab-btn" data-cat="saved">
+        Saved
+        <span class="saved-count" id="savedCountMobile">0</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════════════ HERO ═══════════════ -->
+  <section class="hero container" id="heroSection">
+    <div class="hero-inner">
+      <div>
+        <h1 class="hero-title" id="heroTitle">Top Headlines</h1>
+        <p class="hero-subtitle" id="heroSubtitle">Aggregating from multiple sources in real time</p>
+      </div>
+      <div class="hero-meta">
+        <div class="status-dot"></div>
+        <span class="status-text" id="statusText">Fetching latest stories...</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-divider"></div>
+
+  <!-- ═══════════════ MAIN CONTENT ═══════════════ -->
+  <main class="main container" id="mainContent">
+    <!-- Loading skeleton (shown while fetching) -->
+    <div class="skeleton-grid" id="skeletonGrid">
+      <!-- Populated by JS -->
+    </div>
+
+    <!-- Article grid -->
+    <div class="article-grid hidden" id="articleGrid">
+      <!-- Populated by JS -->
+    </div>
+
+    <!-- Error state -->
+    <div class="error-state hidden" id="errorState">
+      <div class="error-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>
+        </svg>
+      </div>
+      <h3 class="error-title" id="errorTitle">Something went wrong</h3>
+      <p class="error-desc" id="errorDesc">We couldn't fetch the latest news. Please check your connection and try again.</p>
+      <button class="retry-btn" id="retryBtn">Retry</button>
+    </div>
+
+    <!-- Empty state (no saved articles / no search results) -->
+    <div class="empty-state hidden" id="emptyState">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
+      </svg>
+      <h3 id="emptyTitle">No saved articles</h3>
+      <p id="emptyDesc">Articles you save will appear here for quick access.</p>
+    </div>
+
+    <!-- Load more button -->
+    <div class="load-more-wrap hidden" id="loadMoreWrap">
+      <button class="load-more-btn" id="loadMoreBtn">Load More Articles</button>
+    </div>
+  </main>
+
+  <!-- ═══════════════ FOOTER ═══════════════ -->
+  <footer class="footer">
+    <p>Powered by <a href="https://gnews.io" target="_blank" rel="noopener">GNews</a> &amp; <a href="https://newsdata.io" target="_blank" rel="noopener">NewsData.io</a> &middot; Built with vanilla JS</p>
+  </footer>
+
+  <!-- Toast notification -->
+  <div class="toast" id="toast"></div>
+
+  <!-- ═══════════════ JAVASCRIPT ═══════════════ -->
+  <script>
+    // ═══════════════════════════════════════════════════════════
+    //  API CONFIGURATION — Add your keys here
+    // ═══════════════════════════════════════════════════════════
+    const GNEWS_API_KEY  = 'YOUR_GNEWS_API_KEY_HERE';   // gnews.io
+    const NEWSDATA_API_KEY = 'YOUR_NEWSDATA_API_KEY_HERE'; // newsdata.io
+
+    // Endpoint templates
+    const GNEWS_URL    = (cat, q, page) =>
+      `https://gnews.io/api/v4/top-headlines?category=${cat}&lang=en&country=us&max=10&page=${page}&apikey=${GNEWS_API_KEY}`;
+    const GNEWS_SEARCH_URL = (q, page) =>
+      `https://gnews.io/api/v4/search?q=${encodeURIComponent(q)}&lang=en&max=10&page=${page}&apikey=${GNEWS_API_KEY}`;
+    const NEWSDATA_URL = (cat, q, page) => {
+      if (q) return `https://newsdata.io/api/1/latest?apikey=${NEWSDATA_API_KEY}&q=${encodeURIComponent(q)}&language=en&page=${page}`;
+      const c = cat === 'general' ? 'top' : cat;
+      return `https://newsdata.io/api/1/latest?apikey=${NEWSDATA_API_KEY}&category=${c}&language=en&page=${page}`;
+    };
+
+    // ═══════════════════════════════════════════════════════════
+    //  STATE
+    // ═══════════════════════════════════════════════════════════
+    const state = {
+      currentCategory: 'general',
+      searchQuery: '',
+      articles: [],
+      page: 1,
+      nextPageNewsData: null,  // NewsData.io uses page tokens, not numbers
+      isLoading: false,
+      error: null,
+      isSavedView: false,
+    };
+
+    // ═══════════════════════════════════════════════════════════
+    //  DOM REFS
+    // ═══════════════════════════════════════════════════════════
+    const $ = (sel) => document.querySelector(sel);
+    const $$ = (sel) => document.querySelectorAll(sel);
+
+    const skeletonGrid = $('#skeletonGrid');
+    const articleGrid  = $('#articleGrid');
+    const errorState   = $('#errorState');
+    const emptyState   = $('#emptyState');
+    const loadMoreWrap = $('#loadMoreWrap');
+    const loadMoreBtn  = $('#loadMoreBtn');
+    const searchInput  = $('#searchInput');
+    const toastEl      = $('#toast');
+    const heroTitle    = $('#heroTitle');
+    const heroSubtitle = $('#heroSubtitle');
+    const statusText   = $('#statusText');
+    const headerEl     = $('#header');
+
+    // ═══════════════════════════════════════════════════════════
+    //  SAVED ARTICLES (localStorage)
+    // ═══════════════════════════════════════════════════════════
+    const SAVED_KEY = 'newshub_saved_articles';
+
+    function loadSaved() {
+      try {
+        const raw = localStorage.getItem(SAVED_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch { return []; }
+    }
+
+    function saveSaved(list) {
+      localStorage.setItem(SAVED_KEY, JSON.stringify(list));
+      updateSavedCounts();
+    }
+
+    function isSaved(article) {
+      const saved = loadSaved();
+      return saved.some(s => s.url === article.url);
+    }
+
+    function toggleSaved(article) {
+      let saved = loadSaved();
+      const idx = saved.findIndex(s => s.url === article.url);
+      if (idx >= 0) {
+        saved.splice(idx, 1);
+        showToast('Article removed from saved', 'removed');
+      } else {
+        saved.unshift(article);
+        showToast('Article saved', 'saved');
+      }
+      saveSaved(saved);
+
+      // Refresh UI if in saved view
+      if (state.isSavedView) {
+        state.articles = [...saved];
+        renderArticles();
+      } else {
+        // Re-render to update save button state
+        renderArticles();
+      }
+    }
+
+    function updateSavedCounts() {
+      const count = loadSaved().length;
+      const badge = $('#savedCount');
+      const badgeM = $('#savedCountMobile');
+      if (badge) badge.textContent = count;
+      if (badgeM) badgeM.textContent = count;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  UTILITY: Time ago
+    // ═══════════════════════════════════════════════════════════
+    function timeAgo(dateStr) {
+      const date = new Date(dateStr);
+      const now  = new Date();
+      const diff = Math.floor((now - date) / 1000);
+
+      if (diff < 60) return 'Just now';
+      if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+      if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+      if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  UTILITY: Favicon URL from article URL
+    // ═══════════════════════════════════════════════════════════
+    function getFavicon(url) {
+      try {
+        const domain = new URL(url).hostname.replace(/^www\./, '');
+        return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+      } catch {
+        return '';
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  UTILITY: Category color class
+    // ═══════════════════════════════════════════════════════════
+    function catClass(cat) {
+      const c = (cat || 'general').toLowerCase();
+      const map = {
+        general: 'card-cat-general', technology: 'card-cat-technology',
+        business: 'card-cat-business', sports: 'card-cat-sports',
+        science: 'card-cat-science', health: 'card-cat-health',
+      };
+      return map[c] || 'card-cat-general';
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  UTILITY: Normalize article objects from both APIs
+    // ═══════════════════════════════════════════════════════════
+    function normalizeGNews(raw) {
+      return raw.articles?.map(a => ({
+        title: a.title || 'Untitled',
+        description: a.description || '',
+        url: a.url,
+        image: a.image || '',
+        publishedAt: a.publishedAt,
+        sourceName: a.source?.name || 'Unknown',
+        sourceUrl: a.source?.url || a.url,
+        category: state.currentCategory,
+        id: a.url,
+      })) || [];
+    }
+
+    function normalizeNewsData(raw) {
+      return raw.results?.map(a => ({
+        title: a.title || 'Untitled',
+        description: a.description || a.content || '',
+        url: a.link,
+        image: a.image_url || '',
+        publishedAt: a.pubDate || new Date().toISOString(),
+        sourceName: a.source_id || 'Unknown',
+        sourceUrl: a.link,
+        category: (a.category && a.category[0]) || state.currentCategory,
+        id: a.link,
+      })) || [];
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  DEDUPLICATION: merge articles removing duplicates by title
+    // ═══════════════════════════════════════════════════════════
+    function mergeAndDeduplicate(existing, newList) {
+      const seen = new Set(existing.map(a => a.title.toLowerCase().trim()));
+      const merged = [...existing];
+      for (const article of newList) {
+        const key = article.title.toLowerCase().trim();
+        if (!seen.has(key)) {
+          seen.add(key);
+          merged.push(article);
+        }
+      }
+      return merged;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  SKELETON: Render loading placeholders
+    // ═══════════════════════════════════════════════════════════
+    function renderSkeleton(count) {
+      skeletonGrid.innerHTML = '';
+      for (let i = 0; i < count; i++) {
+        skeletonGrid.innerHTML += `
+          <div class="skeleton-card">
+            <div class="skeleton-img"></div>
+            <div class="skeleton-body">
+              <div class="skeleton-line short"></div>
+              <div class="skeleton-line long"></div>
+              <div class="skeleton-line medium"></div>
+            </div>
+          </div>`;
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  FETCH: Load articles from both APIs, merge & dedupe
+    // ═══════════════════════════════════════════════════════════
+    async function fetchArticles() {
+      if (state.isLoading) return;
+      state.isLoading = true;
+      state.error = null;
+
+      // Show skeleton on first page
+      if (state.page === 1) {
+        skeletonGrid.classList.remove('hidden');
+        articleGrid.classList.add('hidden');
+        errorState.classList.add('hidden');
+        emptyState.classList.add('hidden');
+        loadMoreWrap.classList.add('hidden');
+        renderSkeleton(6);
+        statusText.textContent = 'Fetching latest stories...';
+      } else {
+        loadMoreBtn.disabled = true;
+        loadMoreBtn.textContent = 'Loading...';
+      }
+
+      try {
+        let gnewsData = [];
+        let newsdataData = [];
+
+        // Build fetch URLs
+        const gnewsUrl = state.searchQuery
+          ? GNEWS_SEARCH_URL(state.searchQuery, state.page)
+          : GNEWS_URL(state.currentCategory, state.searchQuery, state.page);
+
+        const newsdataUrl = NEWSDATA_URL(state.currentCategory, state.searchQuery, state.nextPageNewsData || '');
+
+        // Fetch both in parallel with individual error handling
+        const [gnewsResult, newsdataResult] = await Promise.allSettled([
+          fetch(gnewsUrl).then(r => {
+            if (!r.ok) throw new Error(`GNews HTTP ${r.status}`);
+            return r.json();
+          }),
+          fetch(newsdataUrl).then(r => {
+            if (!r.ok) throw new Error(`NewsData HTTP ${r.status}`);
+            return r.json();
+          }),
+        ]);
+
+        // Track failures for error messaging
+        const failures = [];
+
+        if (gnewsResult.status === 'fulfilled') {
+          gnewsData = normalizeGNews(gnewsResult.value);
+        } else {
+          failures.push('GNews');
+          console.warn('GNews failed:', gnewsResult.reason);
+        }
+
+        if (newsdataResult.status === 'fulfilled') {
+          newsdataData = normalizeNewsData(newsdataResult.value);
+          // NewsData.io uses a nextPage token for pagination
+          state.nextPageNewsData = newsdataResult.value.nextPage || null;
+        } else {
+          failures.push('NewsData.io');
+          console.warn('NewsData failed:', newsdataResult.reason);
+        }
+
+        // If BOTH failed, show error state
+        if (failures.length === 2) {
+          throw new Error('Both news APIs are unavailable.');
+        }
+
+        // Merge and deduplicate
+        const combined = [...gnewsData, ...newsdataData];
+        state.articles = state.page === 1
+          ? combined
+          : mergeAndDeduplicate(state.articles, combined);
+
+        // Sort by published date (newest first)
+        state.articles.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
+
+        // Show warning if one API failed
+        if (failures.length === 1) {
+          statusText.textContent = `Showing results (${failures[0]} temporarily unavailable)`;
+          statusText.style.color = 'var(--amber)';
+        } else {
+          const source = state.searchQuery ? `matching "${state.searchQuery}"` : `in ${state.currentCategory}`;
+          statusText.textContent = `${state.articles.length} articles ${source}`;
+          statusText.style.color = 'var(--text-tertiary)';
+        }
+
+        skeletonGrid.classList.add('hidden');
+        articleGrid.classList.remove('hidden');
+        renderArticles();
+
+        // Show load more if we got results and have more pages
+        if (state.articles.length > 0) {
+          loadMoreWrap.classList.remove('hidden');
+        }
+
+      } catch (err) {
+        console.error('Fetch error:', err);
+        state.error = err.message;
+
+        skeletonGrid.classList.add('hidden');
+
+        // If we already have some articles, show them with a warning
+        if (state.articles.length > 0) {
+          articleGrid.classList.remove('hidden');
+          statusText.textContent = 'Could not load more — showing cached results';
+          statusText.style.color = 'var(--amber)';
+          showToast('Could not load more articles', 'error');
+        } else {
+          errorState.classList.remove('hidden');
+          $('#errorTitle').textContent = 'Unable to load news';
+          $('#errorDesc').textContent =
+            'Both news sources are currently unavailable. This may be due to API limits or network issues. Please try again in a moment.';
+        }
+      } finally {
+        state.isLoading = false;
+        loadMoreBtn.disabled = false;
+        loadMoreBtn.textContent = 'Load More Articles';
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  RENDER: Build article cards into the grid
+    // ═══════════════════════════════════════════════════════════
+    function renderArticles() {
+      if (state.articles.length === 0) {
+        articleGrid.classList.add('hidden');
+        emptyState.classList.remove('hidden');
+        loadMoreWrap.classList.add('hidden');
+
+        if (state.isSavedView) {
+          $('#emptyTitle').textContent = 'No saved articles';
+          $('#emptyDesc').textContent = 'Articles you save will appear here for quick access.';
+        } else if (state.searchQuery) {
+          $('#emptyTitle').textContent = 'No results found';
+          $('#emptyDesc').textContent = `No articles match "${state.searchQuery}". Try a different search term.`;
+        }
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      articleGrid.classList.remove('hidden');
+
+      articleGrid.innerHTML = state.articles.map(article => {
+        const saved = isSaved(article);
+        const favicon = getFavicon(article.sourceUrl || article.url);
+        const catBadgeClass = catClass(article.category);
+        const displayCat = article.category ? article.category.charAt(0).toUpperCase() + article.category.slice(1) : 'General';
+        const imageHtml = article.image
+          ? `<img src="${escapeHtml(article.image)}" alt="${escapeHtml(article.title)}" loading="lazy" onerror="this.style.display='none'" />`
+          : '';
+
+        return `
+          <article class="card">
+            <div class="card-image-wrap">
+              ${imageHtml}
+              <span class="card-cat-badge ${catBadgeClass}">${escapeHtml(displayCat)}</span>
+            </div>
+            <div class="card-body">
+              <div class="card-meta-row">
+                <div class="card-source">
+                  <img class="card-source-icon" src="${favicon}" alt="" loading="lazy" onerror="this.style.display='none'" />
+                  <span class="card-source-name">${escapeHtml(article.sourceName)}</span>
+                </div>
+                <span class="card-time">${timeAgo(article.publishedAt)}</span>
+              </div>
+              <h3 class="card-headline">${escapeHtml(article.title)}</h3>
+              <p class="card-desc">${escapeHtml(article.description)}</p>
+              <div class="card-actions">
+                <a href="${escapeHtml(article.url)}" target="_blank" rel="noopener noreferrer" class="read-btn">
+                  Read article
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+                  </svg>
+                </a>
+                <button class="save-btn ${saved ? 'saved' : ''}" data-url="${escapeHtml(article.url)}" aria-label="${saved ? 'Remove from saved' : 'Save article'}">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="${saved ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </article>`;
+      }).join('');
+
+      // Attach save button handlers
+      $$('.save-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const url = btn.dataset.url;
+          const article = state.articles.find(a => a.url === url);
+          if (article) toggleSaved(article);
+        });
+      });
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  UTILITY: HTML escape to prevent XSS
+    // ═══════════════════════════════════════════════════════════
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  TOAST: Show brief notification at bottom-right
+    // ═══════════════════════════════════════════════════════════
+    let toastTimer = null;
+
+    function showToast(message, type) {
+      const colors = {
+        saved: 'var(--green)',
+        removed: 'var(--text-secondary)',
+        error: 'var(--red)',
+      };
+      const icons = {
+        saved: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>',
+        removed: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+        error: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+      };
+
+      toastEl.innerHTML = `${icons[type] || icons.saved} ${escapeHtml(message)}`;
+      toastEl.style.color = colors[type] || 'var(--text-primary)';
+      toastEl.classList.add('show');
+
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2800);
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  CATEGORY TABS: Handle tab switching
+    // ═══════════════════════════════════════════════════════════
+    function switchCategory(cat) {
+      state.currentCategory = cat;
+      state.searchQuery = '';
+      state.page = 1;
+      state.nextPageNewsData = null;
+      state.articles = [];
+      state.isSavedView = (cat === 'saved');
+      searchInput.value = '';
+
+      // Update active tab visually (both desktop + mobile)
+      $$('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.cat === cat);
+      });
+
+      if (cat === 'saved') {
+        // Show saved articles from localStorage
+        skeletonGrid.classList.add('hidden');
+        errorState.classList.add('hidden');
+        loadMoreWrap.classList.add('hidden');
+        state.articles = loadSaved();
+        renderArticles();
+        heroTitle.textContent = 'Saved Articles';
+        heroSubtitle.textContent = 'Your personal reading list';
+        statusText.textContent = `${state.articles.length} saved`;
+        statusText.style.color = 'var(--text-tertiary)';
+      } else {
+        heroTitle.textContent = cat.charAt(0).toUpperCase() + cat.slice(1);
+        heroSubtitle.textContent = 'Aggregating from multiple sources in real time';
+        fetchArticles();
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  EVENT: Tab clicks
+    // ═══════════════════════════════════════════════════════════
+    $$('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => switchCategory(btn.dataset.cat));
+    });
+
+    // ═══════════════════════════════════════════════════════════
+    //  EVENT: Search input (debounced)
+    // ═══════════════════════════════════════════════════════════
+    let searchTimer = null;
+
+    searchInput.addEventListener('input', (e) => {
+      clearTimeout(searchTimer);
+      const q = e.target.value.trim();
+
+      searchTimer = setTimeout(() => {
+        if (state.isSavedView) {
+          // Client-side filter for saved articles
+          const allSaved = loadSaved();
+          state.articles = q
+            ? allSaved.filter(a =>
+                a.title.toLowerCase().includes(q.toLowerCase()) ||
+                a.description.toLowerCase().includes(q.toLowerCase())
+              )
+            : allSaved;
+          renderArticles();
+          statusText.textContent = `${state.articles.length} saved`;
+          return;
+        }
+
+        state.searchQuery = q;
+        state.page = 1;
+        state.nextPageNewsData = null;
+        state.articles = [];
+        fetchArticles();
+      }, 350);
+    });
+
+    // ═══════════════════════════════════════════════════════════
+    //  EVENT: Load More button
+    // ═══════════════════════════════════════════════════════════
+    loadMoreBtn.addEventListener('click', () => {
+      if (state.isSavedView || state.isLoading) return;
+      state.page++;
+      fetchArticles();
+    });
+
+    // ═══════════════════════════════════════════════════════════
+    //  EVENT: Retry button
+    // ═══════════════════════════════════════════════════════════
+    $('#retryBtn').addEventListener('click', () => {
+      state.page = 1;
+      state.nextPageNewsData = null;
+      state.articles = [];
+      fetchArticles();
+    });
+
+    // ═══════════════════════════════════════════════════════════
+    //  EVENT: Header scroll effect (add/remove scrolled class)
+    // ═══════════════════════════════════════════════════════════
+    let lastScroll = 0;
+    window.addEventListener('scroll', () => {
+      const y = window.scrollY;
+      headerEl.classList.toggle('header-scrolled', y > 10);
+
+      // Hide mobile tabs on scroll down (optional polish)
+      const mobileTabs = $('#mobileTabs');
+      if (y > lastScroll && y > 80) {
+        mobileTabs.style.transform = 'translateY(-100%)';
+        mobileTabs.style.opacity = '0';
+      } else {
+        mobileTabs.style.transform = 'translateY(0)';
+        mobileTabs.style.opacity = '1';
+      }
+      lastScroll = y;
+    }, { passive: true });
+
+    // ═══════════════════════════════════════════════════════════
+    //  EVENT: Keyboard shortcut ("/" to focus search)
+    // ═══════════════════════════════════════════════════════════
+    document.addEventListener('keydown', (e) => {
+      if (e.key === '/' && document.activeElement !== searchInput) {
+        e.preventDefault();
+        searchInput.focus();
+      }
+      if (e.key === 'Escape') {
+        searchInput.blur();
+      }
+    });
+
+    // ═══════════════════════════════════════════════════════════
+    //  INIT: Load on page load
+    // ═══════════════════════════════════════════════════════════
+    updateSavedCounts();
+    fetchArticles();
+  </script>
+</body>
+</html>
