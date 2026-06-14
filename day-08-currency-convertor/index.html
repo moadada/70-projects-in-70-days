@@ -1,0 +1,1330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Currency Converter</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<style>
+/* ========== RESET & BASE ========== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0a0a0f;
+  --surface: #111118;
+  --border: #1e1e2e;
+  --accent: #7c3aed;
+  --accent-hover: #6d28d9;
+  --accent-glow: rgba(124, 58, 237, 0.25);
+  --success: #00c896;
+  --error: #ff4560;
+  --text-primary: #f0f0f5;
+  --text-secondary: #8888a0;
+  --text-muted: #55556a;
+  --radius: 16px;
+  --radius-sm: 10px;
+  --transition-fast: 150ms ease;
+  --transition-normal: 300ms ease;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text-primary);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 16px 60px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ========== HEADER ========== */
+.header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+.header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+.header p {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+/* ========== CONVERTER CARD ========== */
+.converter-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 32px 28px;
+  max-width: 480px;
+  width: 100%;
+  transition: transform var(--transition-normal);
+}
+.converter-card.shake {
+  animation: shake 0.4s ease;
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-5px); }
+  80% { transform: translateX(5px); }
+}
+
+/* Currency selector row */
+.currency-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+/* ========== CURRENCY SELECTOR ========== */
+.currency-selector {
+  flex: 1;
+  position: relative;
+}
+.selector-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  outline: none;
+}
+.selector-btn:hover { border-color: var(--accent); }
+.selector-btn:focus, .selector-btn.open {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+.selector-btn .flag { font-size: 1.25rem; line-height: 1; }
+.selector-btn .code { flex: 1; text-align: left; }
+.selector-btn .arrow {
+  font-size: 0.625rem;
+  color: var(--text-muted);
+  transition: transform var(--transition-fast);
+}
+.selector-btn.open .arrow { transform: rotate(180deg); }
+
+/* Dropdown */
+.dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  z-index: 100;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px);
+  transition: opacity var(--transition-fast), transform var(--transition-fast), visibility var(--transition-fast);
+  max-height: 320px;
+  display: flex;
+  flex-direction: column;
+}
+.dropdown.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+.dropdown-search {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  background: none;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.875rem;
+  outline: none;
+}
+.dropdown-search::placeholder { color: var(--text-muted); }
+.dropdown-list {
+  overflow-y: auto;
+  flex: 1;
+  padding: 6px 0;
+}
+.dropdown-list::-webkit-scrollbar { width: 5px; }
+.dropdown-list::-webkit-scrollbar-track { background: transparent; }
+.dropdown-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  font-size: 0.875rem;
+}
+.dropdown-item:hover { background: rgba(124, 58, 237, 0.1); }
+.dropdown-item.active { background: rgba(124, 58, 237, 0.15); color: var(--accent); }
+.dropdown-item .flag { font-size: 1.125rem; }
+.dropdown-item .item-code { font-weight: 600; min-width: 36px; }
+.dropdown-item .item-name { color: var(--text-secondary); font-size: 0.8125rem; }
+.dropdown-empty {
+  padding: 20px 14px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+}
+
+/* ========== SWAP BUTTON ========== */
+.swap-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: border-color var(--transition-fast), background var(--transition-fast), transform var(--transition-normal);
+  outline: none;
+}
+.swap-btn:hover {
+  border-color: var(--accent);
+  background: rgba(124, 58, 237, 0.08);
+}
+.swap-btn:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+.swap-btn svg {
+  width: 18px;
+  height: 18px;
+  transition: transform var(--transition-normal);
+}
+.swap-btn.rotated svg { transform: rotate(180deg); }
+
+/* ========== AMOUNT INPUT ========== */
+.amount-section { margin-bottom: 8px; }
+.amount-input-wrap {
+  position: relative;
+}
+.amount-input {
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 3.5rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  outline: none;
+  text-align: center;
+  padding: 8px 0;
+  caret-color: var(--accent);
+}
+.amount-input::placeholder { color: var(--text-muted); }
+.amount-input.loading {
+  animation: pulse-text 1.2s ease-in-out infinite;
+}
+@keyframes pulse-text {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* ========== CONVERTED RESULT ========== */
+.converted-result {
+  text-align: center;
+  margin-top: 12px;
+  font-size: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--accent);
+  min-height: 3rem;
+  transition: opacity var(--transition-normal);
+}
+.converted-result .currency-code {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-left: 6px;
+}
+.converted-result.loading {
+  animation: pulse-text 1.2s ease-in-out infinite;
+}
+
+/* ========== RATE DISPLAY ========== */
+.rate-section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+.rate-text {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+.rate-change {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+}
+.rate-change.visible { opacity: 1; }
+.rate-change.up { color: var(--success); }
+.rate-change.down { color: var(--error); }
+.rate-change svg { width: 12px; height: 12px; }
+
+.copy-rate-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--transition-fast), background var(--transition-fast);
+  outline: none;
+}
+.copy-rate-btn:hover { color: var(--accent); background: rgba(124,58,237,0.08); }
+.copy-rate-btn svg { width: 14px; height: 14px; }
+.copy-rate-btn.copied { color: var(--success); }
+
+/* ========== TIMESTAMP ========== */
+.timestamp {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 16px;
+}
+
+/* ========== POPULAR PAIRS ========== */
+.popular-pairs {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+  max-width: 480px;
+  width: 100%;
+  margin-top: 16px;
+}
+.pair-pill {
+  padding: 7px 16px;
+  border-radius: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+  outline: none;
+}
+.pair-pill:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+.pair-pill:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+.pair-pill.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* ========== CHART CARD ========== */
+.chart-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  max-width: 480px;
+  width: 100%;
+  margin-top: 16px;
+}
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.chart-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.chart-period {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+.chart-wrap {
+  position: relative;
+  height: 200px;
+}
+
+/* ========== ERROR BANNER ========== */
+.error-banner {
+  max-width: 480px;
+  width: 100%;
+  background: rgba(255, 69, 96, 0.08);
+  border: 1px solid rgba(255, 69, 96, 0.2);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  margin-top: 12px;
+  font-size: 0.8125rem;
+  color: var(--error);
+  display: none;
+  text-align: center;
+}
+.error-banner.visible { display: block; }
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 480px) {
+  body { padding: 24px 12px 48px; }
+  .converter-card { padding: 24px 18px; border-radius: 14px; }
+  .amount-input { font-size: 2.5rem; }
+  .currency-row { gap: 8px; }
+  .swap-btn { width: 36px; height: 36px; }
+  .selector-btn { padding: 10px 10px; font-size: 0.875rem; }
+  .chart-card { padding: 18px; }
+  .converted-result { font-size: 1.75rem; margin-top: 8px; }
+  .converted-result .currency-code { font-size: 1rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <h1>Currency Converter</h1>
+  <p>Real-time exchange rates</p>
+</div>
+
+<!-- Error banner -->
+<div class="error-banner" id="errorBanner"></div>
+
+<!-- Converter card -->
+<div class="converter-card" id="converterCard">
+  <!-- Currency selector row -->
+  <div class="currency-row">
+    <div class="currency-selector" id="fromSelector">
+      <button class="selector-btn" id="fromBtn" aria-haspopup="listbox" aria-expanded="false">
+        <span class="flag" id="fromFlag">🇺🇸</span>
+        <span class="code" id="fromCode">USD</span>
+        <span class="arrow">▼</span>
+      </button>
+      <div class="dropdown" id="fromDropdown" role="listbox">
+        <input class="dropdown-search" id="fromSearch" type="text" placeholder="Search currency..." autocomplete="off">
+        <div class="dropdown-list" id="fromList"></div>
+      </div>
+    </div>
+
+    <button class="swap-btn" id="swapBtn" aria-label="Swap currencies" title="Swap currencies">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M7 16l-4-4 4-4"/><path d="M17 8l4 4-4 4"/><line x1="3" y1="12" x2="21" y2="12"/>
+      </svg>
+    </button>
+
+    <div class="currency-selector" id="toSelector">
+      <button class="selector-btn" id="toBtn" aria-haspopup="listbox" aria-expanded="false">
+        <span class="flag" id="toFlag">🇬🇧</span>
+        <span class="code" id="toCode">GBP</span>
+        <span class="arrow">▼</span>
+      </button>
+      <div class="dropdown" id="toDropdown" role="listbox">
+        <input class="dropdown-search" id="toSearch" type="text" placeholder="Search currency..." autocomplete="off">
+        <div class="dropdown-list" id="toList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Amount input -->
+  <div class="amount-section">
+    <div class="amount-input-wrap">
+      <input class="amount-input" id="amountInput" type="text" inputmode="decimal" placeholder="0" value="1000" autocomplete="off">
+    </div>
+  </div>
+
+  <!-- Converted result display -->
+  <div class="converted-result" id="converted-result">
+    <span id="convertedValue">0.00</span><span class="currency-code" id="convertedCurrency">GBP</span>
+  </div>
+
+  <!-- Rate display -->
+  <div class="rate-section">
+    <span class="rate-text" id="rateText">1 USD = — GBP</span>
+    <span class="rate-change" id="rateChange">
+      <svg id="rateArrow" viewBox="0 0 12 12" fill="currentColor"><path d="M6 2l4 5H2z"/></svg>
+      <span id="rateChangeValue"></span>
+    </span>
+    <button class="copy-rate-btn" id="copyRateBtn" aria-label="Copy rate" title="Copy rate">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Timestamp -->
+  <div class="timestamp" id="timestamp"></div>
+</div>
+
+<!-- Popular pairs -->
+<div class="popular-pairs" id="popularPairs"></div>
+
+<!-- Chart card -->
+<div class="chart-card">
+  <div class="chart-header">
+    <span class="chart-title" id="chartTitle">USD / GBP — Last 30 Days</span>
+    <span class="chart-period">30D</span>
+  </div>
+  <div class="chart-wrap">
+    <canvas id="historyChart"></canvas>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CONFIGURATION — API keys as constants at the top
+// ============================================================
+const EXCHANGE_RATE_API_KEY = 'YOUR_EXCHANGERATE_API_KEY'; // Replace with your free key from exchangerate-api.com
+const EXCHANGE_RATE_BASE = 'https://v6.exchangerate-api.com/v6/';
+const FRANKFURTER_BASE = 'https://api.frankfurter.dev/v1';
+
+// ============================================================
+// CURRENCY DATA — code, name, flag emoji
+// ============================================================
+const CURRENCIES = [
+  { code: 'USD', name: 'US Dollar', flag: '🇺🇸' },
+  { code: 'EUR', name: 'Euro', flag: '🇪🇺' },
+  { code: 'GBP', name: 'British Pound', flag: '🇬🇧' },
+  { code: 'JPY', name: 'Japanese Yen', flag: '🇯🇵' },
+  { code: 'AUD', name: 'Australian Dollar', flag: '🇦🇺' },
+  { code: 'CAD', name: 'Canadian Dollar', flag: '🇨🇦' },
+  { code: 'CHF', name: 'Swiss Franc', flag: '🇨🇭' },
+  { code: 'CNY', name: 'Chinese Yuan', flag: '🇨🇳' },
+  { code: 'HKD', name: 'Hong Kong Dollar', flag: '🇭🇰' },
+  { code: 'NZD', name: 'New Zealand Dollar', flag: '🇳🇿' },
+  { code: 'SEK', name: 'Swedish Krona', flag: '🇸🇪' },
+  { code: 'KRW', name: 'South Korean Won', flag: '🇰🇷' },
+  { code: 'SGD', name: 'Singapore Dollar', flag: '🇸🇬' },
+  { code: 'NOK', name: 'Norwegian Krone', flag: '🇳🇴' },
+  { code: 'MXN', name: 'Mexican Peso', flag: '🇲🇽' },
+  { code: 'INR', name: 'Indian Rupee', flag: '🇮🇳' },
+  { code: 'RUB', name: 'Russian Ruble', flag: '🇷🇺' },
+  { code: 'ZAR', name: 'South African Rand', flag: '🇿🇦' },
+  { code: 'TRY', name: 'Turkish Lira', flag: '🇹🇷' },
+  { code: 'BRL', name: 'Brazilian Real', flag: '🇧🇷' },
+  { code: 'TWD', name: 'New Taiwan Dollar', flag: '🇹🇼' },
+  { code: 'DKK', name: 'Danish Krone', flag: '🇩🇰' },
+  { code: 'PLN', name: 'Polish Zloty', flag: '🇵🇱' },
+  { code: 'THB', name: 'Thai Baht', flag: '🇹🇭' },
+  { code: 'IDR', name: 'Indonesian Rupiah', flag: '🇮🇩' },
+  { code: 'HUF', name: 'Hungarian Forint', flag: '🇭🇺' },
+  { code: 'CZK', name: 'Czech Koruna', flag: '🇨🇿' },
+  { code: 'ILS', name: 'Israeli Shekel', flag: '🇮🇱' },
+  { code: 'CLP', name: 'Chilean Peso', flag: '🇨🇱' },
+  { code: 'PHP', name: 'Philippine Peso', flag: '🇵🇭' },
+  { code: 'AED', name: 'UAE Dirham', flag: '🇦🇪' },
+  { code: 'COP', name: 'Colombian Peso', flag: '🇨🇴' },
+  { code: 'SAR', name: 'Saudi Riyal', flag: '🇸🇦' },
+  { code: 'MYR', name: 'Malaysian Ringgit', flag: '🇲🇾' },
+  { code: 'RON', name: 'Romanian Leu', flag: '🇷🇴' },
+  { code: 'BGN', name: 'Bulgarian Lev', flag: '🇧🇬' },
+  { code: 'ARS', name: 'Argentine Peso', flag: '🇦🇷' },
+  { code: 'ISK', name: 'Icelandic Krona', flag: '🇮🇸' },
+];
+
+const POPULAR_PAIRS = [
+  { from: 'USD', to: 'GBP' },
+  { from: 'EUR', to: 'GBP' },
+  { from: 'USD', to: 'EUR' },
+  { from: 'GBP', to: 'JPY' },
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let state = {
+  from: 'USD',
+  to: 'GBP',
+  amount: 1000,
+  rate: null,
+  yesterdayRate: null,
+  loading: false,
+  lastUpdated: null,
+  activePair: null,
+};
+
+let chart = null;
+let openDropdown = null; // track which dropdown is open
+
+// ============================================================
+// UTILITY: Escape HTML to prevent XSS when injecting dynamic content
+// ============================================================
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// ============================================================
+// UTILITY: Debounce — written from scratch, no imports
+// ============================================================
+function debounce(fn, delay) {
+  let timer = null;
+  return function (...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), delay);
+  };
+}
+
+// ============================================================
+// UTILITY: Format a number with up to 4 decimal places, stripping trailing zeros
+// ============================================================
+function formatRate(num) {
+  if (num === null || num === undefined || isNaN(num)) return '—';
+  return parseFloat(num.toFixed(4)).toString();
+}
+
+// ============================================================
+// UTILITY: Format the converted amount for display
+// ============================================================
+function formatAmount(num) {
+  if (num === null || num === undefined || isNaN(num)) return '—';
+  // Show up to 2 decimal places for large numbers, 4 for small
+  if (Math.abs(num) >= 1) {
+    return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+}
+
+// ============================================================
+// UTILITY: Get currency object by code
+// ============================================================
+function getCurrency(code) {
+  return CURRENCIES.find(c => c.code === code) || { code, name: code, flag: '🏳️' };
+}
+
+// ============================================================
+// API: Fetch latest rate — try ExchangeRate-API first, fallback to Frankfurter
+// ============================================================
+async function fetchLatestRate(from, to) {
+  // Same currency — rate is always 1
+  if (from === to) return { rate: 1, source: 'local' };
+
+  // Try primary API first
+  if (EXCHANGE_RATE_API_KEY && EXCHANGE_RATE_API_KEY !== 'YOUR_EXCHANGERATE_API_KEY') {
+    try {
+      const url = `${EXCHANGE_RATE_BASE}${encodeURIComponent(EXCHANGE_RATE_API_KEY)}/pair/${encodeURIComponent(from)}/${encodeURIComponent(to)}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`ExchangeRate-API returned ${res.status}`);
+      const data = await res.json();
+      if (data.result === 'success' && typeof data.conversion_rate === 'number') {
+        return { rate: data.conversion_rate, source: 'exchangerate-api' };
+      }
+      throw new Error('Invalid ExchangeRate-API response');
+    } catch (err) {
+      console.warn('ExchangeRate-API failed, falling back to Frankfurter:', err.message);
+    }
+  }
+
+  // Fallback: Frankfurter API (free, no key)
+  try {
+    const url = `${FRANKFURTER_BASE}/latest?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Frankfurter returned ${res.status}`);
+    const data = await res.json();
+    if (data.rates && typeof data.rates[to] === 'number') {
+      return { rate: data.rates[to], source: 'frankfurter' };
+    }
+    throw new Error('Invalid Frankfurter response');
+  } catch (err) {
+    console.error('Both APIs failed:', err.message);
+    throw err;
+  }
+}
+
+// ============================================================
+// API: Fetch yesterday's rate for change indicator
+// ============================================================
+async function fetchYesterdayRate(from, to) {
+  if (from === to) return 1;
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const dateStr = yesterday.toISOString().split('T')[0];
+  try {
+    const url = `${FRANKFURTER_BASE}/${dateStr}?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Status ${res.status}`);
+    const data = await res.json();
+    if (data.rates && typeof data.rates[to] === 'number') {
+      return data.rates[to];
+    }
+    return null;
+  } catch {
+    return null; // Silently fail — change indicator is nice-to-have
+  }
+}
+
+// ============================================================
+// API: Fetch 30-day historical rates for chart
+// ============================================================
+async function fetchHistoricalRates(from, to) {
+  if (from === to) {
+    // Build flat line at 1
+    const dates = [];
+    const rates = [];
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      dates.push(d.toISOString().split('T')[0]);
+      rates.push(1);
+    }
+    return { dates, rates };
+  }
+
+  const endDate = new Date();
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - 30);
+  const startStr = startDate.toISOString().split('T')[0];
+  const endStr = endDate.toISOString().split('T')[0];
+
+  try {
+    const url = `${FRANKFURTER_BASE}/${startStr}..${endStr}?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Status ${res.status}`);
+    const data = await res.json();
+    if (data.rates) {
+      const dates = Object.keys(data.rates).sort();
+      const rates = dates.map(d => data.rates[d][to]);
+      return { dates, rates };
+    }
+    throw new Error('No historical data');
+  } catch (err) {
+    console.warn('Historical fetch failed:', err.message);
+    return { dates: [], rates: [] };
+  }
+}
+
+// ============================================================
+// UI: Render the rate text, change indicator, and timestamp
+// ============================================================
+function updateRateDisplay() {
+  const { from, to, rate, yesterdayRate, lastUpdated } = state;
+
+  // Rate text
+  const rateText = document.getElementById('rateText');
+  if (rate !== null && !isNaN(rate)) {
+    rateText.textContent = `1 ${escapeHtml(from)} = ${formatRate(rate)} ${escapeHtml(to)}`;
+  } else {
+    rateText.textContent = `1 ${escapeHtml(from)} = — ${escapeHtml(to)}`;
+  }
+
+  // Rate change indicator
+  const rateChangeEl = document.getElementById('rateChange');
+  const rateChangeValue = document.getElementById('rateChangeValue');
+  const rateArrow = document.getElementById('rateArrow');
+
+  if (yesterdayRate !== null && rate !== null && yesterdayRate !== 0) {
+    const diff = rate - yesterdayRate;
+    const pct = ((diff / yesterdayRate) * 100).toFixed(2);
+    if (diff > 0) {
+      rateChangeEl.className = 'rate-change visible up';
+      rateArrow.innerHTML = '<path d="M6 2l4 5H2z"/>'; // up triangle
+      rateChangeValue.textContent = `+${pct}%`;
+    } else if (diff < 0) {
+      rateChangeEl.className = 'rate-change visible down';
+      rateArrow.innerHTML = '<path d="M6 10l4-5H2z"/>'; // down triangle
+      rateChangeValue.textContent = `${pct}%`;
+    } else {
+      rateChangeEl.className = 'rate-change visible';
+      rateArrow.innerHTML = '<circle cx="6" cy="6" r="2"/>';
+      rateChangeValue.textContent = '0.00%';
+    }
+  } else {
+    rateChangeEl.className = 'rate-change';
+  }
+
+  // Timestamp
+  const tsEl = document.getElementById('timestamp');
+  if (lastUpdated) {
+    const t = new Date(lastUpdated);
+    tsEl.textContent = `Last updated: ${t.toLocaleString()}`;
+  } else {
+    tsEl.textContent = '';
+  }
+}
+
+// ============================================================
+// UI: Show/hide error banner
+// ============================================================
+function showError(msg) {
+  const banner = document.getElementById('errorBanner');
+  banner.textContent = msg;
+  banner.classList.add('visible');
+  // Shake the card
+  const card = document.getElementById('converterCard');
+  card.classList.add('shake');
+  setTimeout(() => card.classList.remove('shake'), 500);
+}
+function hideError() {
+  document.getElementById('errorBanner').classList.remove('visible');
+}
+
+// ============================================================
+// UI: Set loading state on amount input
+// ============================================================
+function setLoading(loading) {
+  state.loading = loading;
+  const input = document.getElementById('amountInput');
+  if (loading) {
+    input.classList.add('loading');
+  } else {
+    input.classList.remove('loading');
+  }
+}
+
+// ============================================================
+// CORE: Perform conversion — fetch rate, update UI, fetch history
+// ============================================================
+async function convert() {
+  const { from, to } = state;
+  const rawAmount = document.getElementById('amountInput').value.replace(/[^0-9.]/g, '');
+  const amount = parseFloat(rawAmount);
+
+  // Validate input
+  if (!rawAmount || isNaN(amount) || amount < 0) {
+    state.rate = null;
+    updateRateDisplay();
+    updateConvertedAmount();
+    return;
+  }
+  state.amount = amount;
+
+  setLoading(true);
+  hideError();
+
+  try {
+    const result = await fetchLatestRate(from, to);
+    state.rate = result.rate;
+    state.lastUpdated = new Date();
+
+    updateRateDisplay();
+    updateConvertedAmount();
+    loadYesterdayAndChart(from, to);
+  } catch (err) {
+    state.rate = null;
+    showError('Unable to fetch exchange rate. Please check your connection and try again.');
+    updateRateDisplay();
+    updateConvertedAmount();
+  } finally {
+    setLoading(false);
+  }
+}
+
+// ============================================================
+// Load yesterday's rate and chart data in parallel
+// ============================================================
+async function loadYesterdayAndChart(from, to) {
+  const [yesterdayResult, historyResult] = await Promise.allSettled([
+    fetchYesterdayRate(from, to),
+    fetchHistoricalRates(from, to),
+  ]);
+
+  if (yesterdayResult.status === 'fulfilled' && yesterdayResult.value !== null) {
+    state.yesterdayRate = yesterdayResult.value;
+    updateRateDisplay();
+  } else {
+    state.yesterdayRate = null;
+  }
+
+  if (historyResult.status === 'fulfilled') {
+    renderChart(historyResult.value.dates, historyResult.value.rates);
+  } else {
+    renderChart([], []);
+  }
+}
+
+// ============================================================
+// UI: Update the converted amount display (the input shows the "from" amount)
+// We show the "from" amount as the large input; the rate info is displayed below.
+// ============================================================
+function updateConvertedAmount() {
+  const el = document.getElementById('converted-result');
+  const valueEl = document.getElementById('convertedValue');
+  const currencyEl = document.getElementById('convertedCurrency');
+
+  // Always update the target currency code
+  currencyEl.textContent = state.to;
+
+  // Parse current input amount
+  const rawAmount = document.getElementById('amountInput').value.replace(/[^0-9.]/g, '');
+  const amount = parseFloat(rawAmount);
+
+  // Guard: if amount is empty, 0, or NaN — show 0.00 with currency, never blank
+  if (!rawAmount || isNaN(amount) || amount === 0) {
+    valueEl.textContent = '0.00';
+    el.classList.remove('loading');
+    return;
+  }
+
+  // If rate isn't loaded yet, show loading state
+  if (state.rate === null || isNaN(state.rate)) {
+    valueEl.textContent = '—';
+    return;
+  }
+
+  // Calculate converted amount: amount × rate
+  const result = amount * state.rate;
+
+  // Never show NaN or undefined
+  if (isNaN(result)) return;
+
+  valueEl.textContent = formatAmount(result);
+  el.classList.remove('loading');
+}
+
+// ============================================================
+// UI: Render the historical chart
+// ============================================================
+function renderChart(dates, rates) {
+  const ctx = document.getElementById('historyChart').getContext('2d');
+
+  // Update chart title
+  document.getElementById('chartTitle').textContent = `${state.from} / ${state.to} — Last 30 Days`;
+
+  // Destroy previous chart instance
+  if (chart) {
+    chart.destroy();
+    chart = null;
+  }
+
+  if (dates.length === 0 || rates.length === 0) {
+    // Draw empty state
+    chart = new Chart(ctx, {
+      type: 'line',
+      data: { labels: ['No data'], datasets: [{ data: [0], borderColor: '#1e1e2e' }] },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { display: false }, y: { display: false } },
+      }
+    });
+    return;
+  }
+
+  // Format date labels
+  const labels = dates.map(d => {
+    const date = new Date(d + 'T00:00:00');
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  });
+
+  // Determine if trend is up or down for gradient color
+  const firstRate = rates[0];
+  const lastRate = rates[rates.length - 1];
+  const trendUp = lastRate >= firstRate;
+  const lineColor = trendUp ? '#00c896' : '#ff4560';
+
+  // Create gradient fill
+  const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+  if (trendUp) {
+    gradient.addColorStop(0, 'rgba(0, 200, 150, 0.2)');
+    gradient.addColorStop(1, 'rgba(0, 200, 150, 0)');
+  } else {
+    gradient.addColorStop(0, 'rgba(255, 69, 96, 0.2)');
+    gradient.addColorStop(1, 'rgba(255, 69, 96, 0)');
+  }
+
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data: rates,
+        borderColor: lineColor,
+        borderWidth: 2,
+        backgroundColor: gradient,
+        fill: true,
+        tension: 0.35,
+        pointRadius: 0,
+        pointHoverRadius: 5,
+        pointHoverBackgroundColor: lineColor,
+        pointHoverBorderColor: '#111118',
+        pointHoverBorderWidth: 2,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1e1e2e',
+          titleColor: '#f0f0f5',
+          bodyColor: '#8888a0',
+          borderColor: '#2e2e3e',
+          borderWidth: 1,
+          padding: 10,
+          displayColors: false,
+          callbacks: {
+            label: (context) => `${formatRate(context.parsed.y)} ${state.to}`,
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(30,30,46,0.5)', drawBorder: false },
+          ticks: {
+            color: '#55556a',
+            font: { size: 10, family: 'Inter' },
+            maxTicksLimit: 6,
+            maxRotation: 0,
+          },
+          border: { display: false },
+        },
+        y: {
+          grid: { color: 'rgba(30,30,46,0.5)', drawBorder: false },
+          ticks: {
+            color: '#55556a',
+            font: { size: 10, family: 'Inter' },
+            maxTicksLimit: 5,
+            callback: (v) => formatRate(v),
+          },
+          border: { display: false },
+        }
+      }
+    }
+  });
+}
+
+// ============================================================
+// UI: Build the currency dropdown list items
+// ============================================================
+function buildDropdownItems(listEl, side) {
+  listEl.innerHTML = '';
+  CURRENCIES.forEach(c => {
+    const item = document.createElement('div');
+    item.className = 'dropdown-item' + ((side === 'from' && c.code === state.from) || (side === 'to' && c.code === state.to) ? ' active' : '');
+    item.setAttribute('role', 'option');
+    item.dataset.code = c.code;
+    item.innerHTML = `<span class="flag">${c.flag}</span><span class="item-code">${escapeHtml(c.code)}</span><span class="item-name">${escapeHtml(c.name)}</span>`;
+    item.addEventListener('click', () => selectCurrency(side, c.code));
+    listEl.appendChild(item);
+  });
+}
+
+// ============================================================
+// UI: Filter dropdown items based on search query
+// ============================================================
+function filterDropdown(listEl, searchEl) {
+  const query = searchEl.value.toLowerCase().trim();
+  const items = listEl.querySelectorAll('.dropdown-item');
+  let visibleCount = 0;
+  items.forEach(item => {
+    const code = item.dataset.code.toLowerCase();
+    const name = (CURRENCIES.find(c => c.code === item.dataset.code) || {}).name?.toLowerCase() || '';
+    const match = !query || code.includes(query) || name.includes(query);
+    item.style.display = match ? '' : 'none';
+    if (match) visibleCount++;
+  });
+  // Show "no results" if nothing matches
+  let emptyEl = listEl.querySelector('.dropdown-empty');
+  if (visibleCount === 0) {
+    if (!emptyEl) {
+      emptyEl = document.createElement('div');
+      emptyEl.className = 'dropdown-empty';
+      emptyEl.textContent = 'No currencies found';
+      listEl.appendChild(emptyEl);
+    }
+  } else if (emptyEl) {
+    emptyEl.remove();
+  }
+}
+
+// ============================================================
+// UI: Open/close dropdown
+// ============================================================
+function openDropdownEl(side) {
+  // Close the other dropdown if open
+  closeAllDropdowns();
+
+  const dropdown = document.getElementById(side + 'Dropdown');
+  const btn = document.getElementById(side + 'Btn');
+  const search = document.getElementById(side + 'Search');
+
+  dropdown.classList.add('open');
+  btn.classList.add('open');
+  btn.setAttribute('aria-expanded', 'true');
+  openDropdown = side;
+
+  // Focus search input
+  search.value = '';
+  filterDropdown(document.getElementById(side + 'List'), search);
+  setTimeout(() => search.focus(), 50);
+}
+
+function closeDropdown(side) {
+  const dropdown = document.getElementById(side + 'Dropdown');
+  const btn = document.getElementById(side + 'Btn');
+  dropdown.classList.remove('open');
+  btn.classList.remove('open');
+  btn.setAttribute('aria-expanded', 'false');
+  if (openDropdown === side) openDropdown = null;
+}
+
+function closeAllDropdowns() {
+  if (openDropdown) closeDropdown(openDropdown);
+}
+
+// ============================================================
+// UI: Select a currency from the dropdown
+// ============================================================
+function selectCurrency(side, code) {
+  const c = getCurrency(code);
+
+  if (side === 'from') {
+    // If selecting same as "to", swap them
+    if (code === state.to) {
+      state.to = state.from;
+      updateCurrencyButton('to');
+    }
+    state.from = code;
+  } else {
+    if (code === state.from) {
+      state.from = state.to;
+      updateCurrencyButton('from');
+    }
+    state.to = code;
+  }
+
+  updateCurrencyButton(side);
+  closeDropdown(side);
+  updatePopularPairsHighlight();
+  convert();
+}
+
+// ============================================================
+// UI: Update a currency selector button display
+// ============================================================
+function updateCurrencyButton(side) {
+  const c = getCurrency(side === 'from' ? state.from : state.to);
+  document.getElementById(side + 'Flag').textContent = c.flag;
+  document.getElementById(side + 'Code').textContent = c.code;
+}
+
+// ============================================================
+// UI: Swap currencies with rotation animation
+// ============================================================
+function swapCurrencies() {
+  const btn = document.getElementById('swapBtn');
+  // Toggle rotation class for animation
+  btn.classList.toggle('rotated');
+
+  // Swap state
+  const temp = state.from;
+  state.from = state.to;
+  state.to = temp;
+
+  // Update buttons
+  updateCurrencyButton('from');
+  updateCurrencyButton('to');
+
+  // Update active list items
+  buildDropdownItems(document.getElementById('fromList'), 'from');
+  buildDropdownItems(document.getElementById('toList'), 'to');
+
+  updatePopularPairsHighlight();
+  state.yesterdayRate = null;
+  convert();
+}
+
+// ============================================================
+// UI: Render popular pairs as pill buttons
+// ============================================================
+function renderPopularPairs() {
+  const container = document.getElementById('popularPairs');
+  container.innerHTML = '';
+  POPULAR_PAIRS.forEach((pair, idx) => {
+    const pill = document.createElement('button');
+    pill.className = 'pair-pill';
+    pill.textContent = `${pair.from} / ${pair.to}`;
+    pill.dataset.index = idx;
+    pill.addEventListener('click', () => {
+      state.from = pair.from;
+      state.to = pair.to;
+      updateCurrencyButton('from');
+      updateCurrencyButton('to');
+      buildDropdownItems(document.getElementById('fromList'), 'from');
+      buildDropdownItems(document.getElementById('toList'), 'to');
+      updatePopularPairsHighlight();
+      state.yesterdayRate = null;
+      convert();
+    });
+    container.appendChild(pill);
+  });
+}
+
+// ============================================================
+// UI: Highlight active popular pair
+// ============================================================
+function updatePopularPairsHighlight() {
+  const pills = document.querySelectorAll('.pair-pill');
+  let foundActive = false;
+  pills.forEach(pill => {
+    const idx = parseInt(pill.dataset.index);
+    const pair = POPULAR_PAIRS[idx];
+    if (pair.from === state.from && pair.to === state.to) {
+      pill.classList.add('active');
+      foundActive = true;
+    } else {
+      pill.classList.remove('active');
+    }
+  });
+  state.activePair = foundActive;
+}
+
+// ============================================================
+// UI: Copy rate to clipboard
+// ============================================================
+async function copyRate() {
+  if (state.rate === null) return;
+  const text = `1 ${state.from} = ${formatRate(state.rate)} ${state.to}`;
+  try {
+    await navigator.clipboard.writeText(text);
+    const btn = document.getElementById('copyRateBtn');
+    btn.classList.add('copied');
+    // Temporarily change the icon to a checkmark
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>`;
+    }, 1500);
+  } catch {
+    // Clipboard API not available — silently fail
+  }
+}
+
+// ============================================================
+// EVENT LISTENERS
+// ============================================================
+function initEvents() {
+  // Currency selector buttons
+  document.getElementById('fromBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (openDropdown === 'from') {
+      closeDropdown('from');
+    } else {
+      openDropdownEl('from');
+    }
+  });
+  document.getElementById('toBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (openDropdown === 'to') {
+      closeDropdown('to');
+    } else {
+      openDropdownEl('to');
+    }
+  });
+
+  // Dropdown search inputs
+  document.getElementById('fromSearch').addEventListener('input', () => {
+    filterDropdown(document.getElementById('fromList'), document.getElementById('fromSearch'));
+  });
+  document.getElementById('toSearch').addEventListener('input', () => {
+    filterDropdown(document.getElementById('toList'), document.getElementById('toSearch'));
+  });
+
+  // Prevent dropdown search from bubbling click to close
+  document.getElementById('fromSearch').addEventListener('click', (e) => e.stopPropagation());
+  document.getElementById('toSearch').addEventListener('click', (e) => e.stopPropagation());
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    if (openDropdown && !e.target.closest('.currency-selector')) {
+      closeAllDropdowns();
+    }
+  });
+
+  // Keyboard: Escape to close dropdown, Enter to select first visible item
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && openDropdown) {
+      closeAllDropdowns();
+    }
+    if (e.key === 'Enter' && openDropdown) {
+      const list = document.getElementById(openDropdown + 'List');
+      const firstVisible = list.querySelector('.dropdown-item:not([style*="display: none"])');
+      if (firstVisible) {
+        selectCurrency(openDropdown, firstVisible.dataset.code);
+      }
+    }
+  });
+
+  // Swap button
+  document.getElementById('swapBtn').addEventListener('click', swapCurrencies);
+
+  // Amount input with debounce
+  const debouncedConvert = debounce(convert, 400);
+  document.getElementById('amountInput').addEventListener('input', (e) => {
+    // Allow only numbers and one decimal point
+    let val = e.target.value.replace(/[^0-9.]/g, '');
+    // Prevent multiple dots
+    const parts = val.split('.');
+    if (parts.length > 2) val = parts[0] + '.' + parts.slice(1).join('');
+    e.target.value = val;
+    debouncedConvert();
+  });
+
+  // Copy rate button
+  document.getElementById('copyRateBtn').addEventListener('click', copyRate);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+function init() {
+  // Build dropdown items
+  buildDropdownItems(document.getElementById('fromList'), 'from');
+  buildDropdownItems(document.getElementById('toList'), 'to');
+
+  // Render popular pairs
+  renderPopularPairs();
+  updatePopularPairsHighlight();
+
+  // Set up events
+  initEvents();
+
+  // Initial conversion
+  convert();
+}
+
+// Start the app
+init();
+</script>
+</body>
+</html>
